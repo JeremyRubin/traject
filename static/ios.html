@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+	<script src='https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js'></script>
+
+	<script src='https://raw.github.com/DmitryBaranovskiy/g.raphael/master/min/g.raphael-min.js'></script>
+	<script src='https://raw.github.com/DmitryBaranovskiy/g.raphael/master/min/g.line-min.js'></script>
+        <title>curve generator</title>
+        <meta name="viewport" content="width=device-width,user-scalable=yes"/>
+        <style>
+            body{
+                font-family:helvetica,arial,sans serif}
+            #sphere{
+                position:absolute;
+                width:10px;
+                height:10px;
+                border-radius:10px;
+                -webkit-radius:10px;
+                background-color:#00f}
+            </style>
+    </head>
+    <body>
+        <div id="content">
+            <h1>Curve Generation</h1>
+            <div id="sphere"></div>
+          
+		<button id='bt'style='width:100%;bottom:10px;height:100%'>Press to record<br><br><br><br></button>
+	
+        </div>
+        <script type="text/javascript">
+	var r = Raphael(10,200,640,480);
+	var chart = function(data, axis, color){
+		r.linechart(0, window.innerHeight*2.0/5.0, window.innerWidth, window.innerHeight/5.0, axis, data, {"colors":[color], axis:"0 0 1 1"});
+		
+	}
+    	var low_pass = function(data, factor){
+		var vals = data;
+		var val = vals[0];
+		for(var i=1,len=vals.length; i<len; i++){
+			var currentValue = vals[i];
+			val += (currentValue-val)/factor;
+			vals[i] = parseFloat(val) || 0;
+		}
+		return vals
+	}
+	var compute = function(x,y,t){
+        var vx = [0];
+        var vy = [0];
+        var px = [0];
+        var py =[0]; 
+        var dt = [0];
+	var smoothX = low_pass(x,10);
+	var smoothY = low_pass(y, 10);
+        for(var i=1; i < t.length; i++){ dt[i-1] = (t[i] - t[i-1])/1000;} //generates a delta time array
+        for(var j=0; j < x.length; j++){ // generates an x and y velocity array  
+            vx[j+1] = smoothX[j]*dt[j]+vx[j];
+            vy[j+1] = smoothY[j]*dt[j]+vy[j];
+      	 }
+	for(var k=0; k < vx.length; k++){//generates position array
+            px[k+1] = parseFloat(px[k] + vx[k]*dt[k]) || 0;
+            py[k+1] = parseFloat(py[k] + vy[k]*dt[k]) || 0;
+	}
+	r.clear(); 
+	chart(low_pass(x, 5), t, "black");
+	chart(low_pass(y, 5), t, "orange"); 
+	chart(vx, t, "blue");
+	chart(vy, t, "green");
+	
+	chart(py, px, "red");  
+   	console.log(px,py); 
+    }
+            var x=0, y=0, vx=0, vy=0, ax=0, ay=0;
+            var accelerationsX = [], accelerationsY = [], timestamp = [Date.now()];
+            var sphere=document.getElementById("sphere");
+            if(window.DeviceMotionEvent!=undefined){
+		var button = document.getElementById('bt');
+		button.onclick = function(){
+		if( window.ondevicemotion == null ){
+                window.ondevicemotion = function(e){
+                    
+                    ax = event.accelerationIncludingGravity.x*5;
+                  ay = event.accelerationIncludingGravity.y*5;
+                   accelerationsX.push(e.accelerationIncludingGravity.x);                    
+                    accelerationsY.push(e.accelerationIncludingGravity.y);
+                    timestamp.push(Date.now());
+		}}
+       		else{
+		compute(accelerationsX, accelerationsY, timestamp);
+		window.ondevicemotion = null;
+		accelerationsX, accelerationsY, timestamp = 0;
+		timestamp = [Date.now()];
+		}
+}
+}                
+               /* setInterval(function(){
+                            var landscapeOrientation = window.innerWidth/window.innerHeight > 1;
+                            if(landscapeOrientation){
+                            vx=vx+ay;
+                            vy=vy+ax;}
+                            else{
+                            vy=vy-ay;
+                            vx=vx+ax;}
+                            vx=vx*0.98;
+                            vy=vy*0.98;
+                            y=parseInt(y+vy/50);
+                            x=parseInt(x+vx/50);
+                            boundingBoxCheck();
+                            sphere.style.top=y+"px";
+                            sphere.style.left=x+"px";},25);}
+            function boundingBoxCheck(){
+                if(x<0){
+                    x=0;
+                    vx=-vx;}
+                if(y<0){
+                    y=0;
+                    vy=-vy;}
+                if(x>window.innerWidth){//document.documentElement.clientWidth){
+                    x=window.innerWidth;//document.documentElement.clientWidth;
+                    vx=-vx;}
+                if(y>window.innerHeight){//document.documentElement.clientHeight){
+                    y=windoq.innerHeight;//document.documentElement.clientHeight;
+                    vy=-vy;}}*/
+            </script>
+    </body>
+</html>
